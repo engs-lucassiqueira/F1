@@ -345,43 +345,56 @@
 
     // FINALIZAÇÃO DAS 5 RODADAS E CÁLCULO DE PENALIDADE
     function finalizarPartida() {
-      jogoFinalizado = true;
+  jogoFinalizado = true;
 
-      let somaTempos = rodadasValidas.reduce((a, b) => a + b, 0);
-      let mediaPura = Math.round(somaTempos / 5);
-      let penalidadeTotalMs = totalQueimas * 50;
-      let mediaFinal = mediaPura + penalidadeTotalMs;
+  let somaTempos = rodadasValidas.reduce((a, b) => a + b, 0);
+  let mediaPura = Math.round(somaTempos / 5);
+  let penalidadeTotalMs = totalQueimas * 50;
+  let mediaFinal = mediaPura + penalidadeTotalMs;
 
-      document.getElementById('valMedia').innerText = `${mediaFinal} ms`;
+  document.getElementById('valMedia').innerText = `${mediaFinal} ms`;
 
-      // EXIBE CÁLCULO EXPLICITO DE PENALIDADES
-      const boxPenalidade = document.getElementById('boxPenalidades');
-      const detalheCalculo = document.getElementById('detalheCalculo');
-      boxPenalidade.style.display = "block";
+  // EXIBE CÁLCULO EXPLICITO DE PENALIDADES
+  const boxPenalidade = document.getElementById('boxPenalidades');
+  const detalheCalculo = document.getElementById('detalheCalculo');
+  boxPenalidade.style.display = "block";
 
-      detalheCalculo.innerHTML = `
-        <strong>Soma das 5 rodadas:</strong> ${somaTempos} ms <br>
-        <strong>Média Bruta (Soma ÷ 5):</strong> ${mediaPura} ms <br>
-        <strong>Penalidade por Queimas:</strong> ${totalQueimas} queima(s) × 50 ms = <span style="color:#ff5252;">+${penalidadeTotalMs} ms</span> <br>
-        <hr style="border-color: #323238; margin: 5px 0;">
-        <strong style="font-size: 15px; color: #00e676;">Média Final Calculada: ${mediaPura} ms + ${penalidadeTotalMs} ms = ${mediaFinal} ms</strong>
-      `;
+  detalheCalculo.innerHTML = `
+    <strong>Soma das 10 rodadas:</strong> ${somaTempos} ms <br>
+    <strong>Média Bruta (Soma ÷ 5):</strong> ${mediaPura} ms <br>
+    <strong>Penalidade por Queimas:</strong> ${totalQueimas} queima(s) × 50 ms = <span style="color:#ff5252;">+${penalidadeTotalMs} ms</span> <br>
+    <hr style="border-color: #323238; margin: 5px 0;">
+    <strong style="font-size: 15px; color: #00e676;">Média Final Calculada: ${mediaPura} ms + ${penalidadeTotalMs} ms = ${mediaFinal} ms</strong>
+  `;
 
-      // VERIFICA SE ENTRA NO TOP 7
-      let qualificaTop7 = false;
-      if (ranking.length < 7 || mediaFinal < ranking[ranking.length - 1].media) {
-        qualificaTop7 = true;
-      }
+  // VERIFICA SE ENTRA NO TOP 7
+  let qualificaTop7 = false;
+  if (ranking.length < 7 || mediaFinal < ranking[ranking.length - 1].media) {
+    qualificaTop7 = true;
+  }
 
-      if (qualificaTop7) {
-        aguardandoNome = true;
-        document.getElementById('lblStatus').innerText = "FIM DE JOGO! VOCÊ ENTROU NO TOP 7!";
-        document.getElementById('boxCadastro').style.display = "block";
-        document.getElementById('txtNomePiloto').focus();
-      } else {
-        document.getElementById('lblStatus').innerText = "Fim de Jogo! Média obtida: " + mediaFinal + " ms. Pressione o BOTÃO para o próximo jogador.";
-      }
-    }
+  if (qualificaTop7) {
+    aguardandoNome = true;
+    document.getElementById('lblStatus').innerText = "FIM DE JOGO! VOCÊ ENTROU NO TOP 7!";
+    document.getElementById('boxCadastro').style.display = "block";
+    document.getElementById('txtNomePiloto').focus();
+
+    // --- ADICIONADO: Envia sinal para o Arduino tocar a vinheta e piscar os LEDs ---
+    enviarComandoSerial("COMEMORAR");
+  } else {
+    document.getElementById('lblStatus').innerText = "Fim de Jogo! Média obtida: " + mediaFinal + " ms. Pressione o BOTÃO para o próximo jogador.";
+  }
+}
+
+// Funçõozinha auxiliar para enviar mensagens ao Arduino (adicione no final do script)
+async function enviarComandoSerial(mensagem) {
+  if (portaSerial && portaSerial.writable) {
+    const escritor = portaSerial.writable.getWriter();
+    const encoder = new TextEncoder();
+    await escritor.write(encoder.encode(mensagem + "\n"));
+    escritor.releaseLock();
+  }
+}
 
     // SALVAR PILOTO NO RANKING TOP 7
     function salvarPilotoNoRanking() {
